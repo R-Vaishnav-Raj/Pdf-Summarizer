@@ -1,0 +1,197 @@
+{
+  "name": "PDF Summarization",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "944509d3-793c-48ec-82b8-740855785e13",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "3c3a332b-743c-4e9a-90f4-249d4bdfe556",
+      "name": "Webhook",
+      "webhookId": "944509d3-793c-48ec-82b8-740855785e13"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        220,
+        0
+      ],
+      "id": "85110ada-dfe9-44b5-b40d-48f130017142",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert educational content summarizer.\n\nPlease read the following text extracted from an educational PDF document and provide a clear, concise summary in 300 words or less.\n\nMake sure the summary covers the key points, is easy to understand, and keeps an academic but approachable tone.\n\nHere is the text:\n\n{{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        440,
+        0
+      ],
+      "id": "54c1e52c-de5a-4cbc-a266-8730adf40365",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "AH613ePJrsO28oHk",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "pdf_summaries",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "summary",
+              "fieldValue": "={{ $('OpenAI').item.json.message.content }}"
+            },
+            {
+              "fieldId": "pdf_location",
+              "fieldValue": "=https://vpplojwiwohaeeuzsxkm.supabase.co/storage/v1/object/pdf-storage/{{ $('Webhook').item.json.headers['postman-token'] }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1060,
+        0
+      ],
+      "id": "15e7d254-a8f1-4593-b986-3225df73feb3",
+      "name": "Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "y0VOxgQYl4UB0TSS",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://vpplojwiwohaeeuzsxkm.supabase.co/storage/v1/object/pdf-storage/{{ $('Webhook').item.json.headers['postman-token'] }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwcGxvandpd29oYWVldXpzeGttIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MDQwMDk5OSwiZXhwIjoyMDY1OTc2OTk5fQ.ifEtBNOK3nXG41lQiBGTKBFY9ZPTUJlMVlhWEgUz-hI"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/octet-stream",
+        "body": "=={{ $('Webhook').item.binary.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        840,
+        0
+      ],
+      "id": "7f00a509-91aa-433f-bac8-083194150256",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "bEHOnerdtW5hi1sN",
+          "name": "Header Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "53d1ac37-483b-4c68-93e1-b6ff3aa4d603",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8004a49843c5f6ffd2f1c6d98023fb3bab0d4256c07b804b76c09f8213d907d4"
+  },
+  "id": "z7CDajoap3Oy9xaR",
+  "tags": []
+}
